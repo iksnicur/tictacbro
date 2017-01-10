@@ -1,0 +1,21 @@
+{
+  "name": "pictionary",
+  "version": "1.0.0",
+  "description": "pictionary game with friends",
+  "main": "sketch.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "pictionary",
+    "game",
+    "node"
+  ],
+  "author": "Justin Rucinski",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.14.0",
+    "socket.io": "^1.7.2"
+  }
+}

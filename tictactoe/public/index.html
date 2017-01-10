@@ -1,0 +1,349 @@
+<html>
+<head>
+		<title> Tic Tac Bro </title>
+
+  <meta charset="UTF-8">
+
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+	integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+	<script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+
+  <!-- these lines remove any default padding and style. you might only need one of these values set. -->
+  <style>
+		body {
+			padding: 30px;
+			margin-top: 30px;
+		}
+		#game-window{
+			display:none;
+		}
+		#game-board{
+			display:none;
+		}
+
+	</style>
+</head>
+
+<body>
+		<div id="userFormArea" class="row">
+			<div class="col-md-4">
+				<form id="userForm">
+					<div class="form-group">
+						<label>Enter Username</label>
+						<input type="text" class="form-control" id="username"></input>
+						<br />
+						<input type="submit" class="btn btn-primary" value="Login" />
+					</div>
+				</form>
+			</div>
+		</div>
+
+
+		<div id="game-window" class="container col-md-12">
+			<div id="player-name" class="well well-sm"></div>
+			<br />
+			<div id="gamemode" class="container col-md-6 col-md-offset-3">
+				<h3 class="text-center"><strong>Choose your difficulty.</strong></h3>
+				<br />
+				<input id="random" type="submit" class="btn btn-primary btn-lg btn-block" value="Random" />
+				<input id="hard" type="submit" class="btn btn-primary btn-lg btn-block" value="Hard" />
+			</div>
+			<div id="game-board" class="container col-md-6 col-md-offset-3">
+				<div>
+					<div id="title"></div>
+					<h3 class="text-center">You are "X's"</h3>
+				</div>
+				<br />
+				<div class="container col-md-6 col-md-offset-3">
+					<div class="row text-center">
+						<input id="0" type="button" class="btn btn-sm" style="width:100px;" value=""></input>
+						<input id="1" type="button" class="btn btn-sm" style="width:100px;" value=""></input>
+						<input id="2" type="button" class="btn btn-sm" style="width:100px;" value=""></input>
+					</div>
+					<div class="row text-center" style="padding:10px;">
+						<input id="3" type="button" class="btn btn-sm" style="width:100px;" value=""></input>
+						<input id="4" type="button" class="btn btn-sm" style="width:100px;" value=""></input>
+						<input id="5" type="button" class="btn btn-sm" style="width:100px;" value=""></input>
+					</div>
+					<div class="row text-center">
+						<input id="6" type="button" class="btn btn-sm" style="width:100px;" value=""></input>
+						<input id="7" type="button" class="btn btn-sm" style="width:100px;" value=""></input>
+						<input id="8" type="button" class="btn btn-sm" style="width:100px;" value=""></input>
+					</div>
+				</div>
+				<br />
+				<div class="container col-md-6 col-md-offset-3" style="padding:50px;">
+					<div class="row text-center">
+						<input id="new-game" type="submit" class="btn btn-primary btn-lg" value="New Game" />
+				</div>
+				<div class="col-md-6 col-md-offset-3">
+					<div id="winner"></div>
+				</div>
+			</div>
+
+		</div> <!-- game-window -->
+
+
+		<script>
+			$(function(){
+				var socket = io.connect();
+				var $gamewindow   = $('#game-window');
+				var $userForm     = $('#userForm');
+				var $userFormArea = $('#userFormArea');
+				var $username     = $('#username');
+				var $playername   = $('#player-name');
+				var $canvas       = $('#canvas');
+				var $random       = $('#random');
+				var $hard         = $('#hard');
+				var $gamemode     = $('#gamemode');
+				var $gameboard    = $('#game-board');
+				var $title        = $('#title');
+				var $newgame			= $('#new-game');
+				var $winner				= $("#winner");
+				var $0						= $('#0');
+				var $1						= $('#1');
+				var $2						= $('#2');
+				var $3				   	= $('#3');
+				var $4						= $('#4');
+				var $5						= $('#5');
+				var $6						= $('#6');
+				var $7						= $('#7');
+				var $8						= $('#8');
+
+				$userForm.submit(function(e) {
+					e.preventDefault();
+					var html = '<h2 class="text-center">Welcome to Tic Tac Bro, ' + $username.val() + '!</h3>';
+					$playername.html(html);
+					socket.emit('new user', $username.val(),
+						function(data) {
+							if(data) {
+								$userFormArea.hide();
+								$gamewindow.show();
+							}
+						}
+					);
+					$username.val('');
+				});
+
+				$random.on('click', function(e) {
+						socket.emit('random');
+						var html = '';
+						html += '<h2 id="title" class="text-center"><strong>Random Difficulty</strong></h2>'
+						$title.html(html);
+						$gamemode.hide();
+						$gameboard.show();
+				});
+
+				$hard.on('click', function(e) {
+						socket.emit('hard');
+						var html = '';
+						html += '<h2 id="title" class="text-center"><strong>Hard Difficulty</strong></h2>'
+						$title.html(html);
+						$gamemode.hide();
+						$gameboard.show();
+				});
+
+				$newgame.on('click', function(e) {
+						socket.emit('reset');
+						resetButtons();
+				});
+
+				$0.on('click', function(e) {
+					if(this.value === "X") {
+						alert("User Controlled!");
+					} else if (this.value === "O") {
+						alert("Computer Controlled!");
+					} else {
+						socket.emit('move', 0);
+						this.value = "X";
+					}
+				});
+				$1.on('click', function(e) {
+					if(this.value === "X") {
+						alert("User Controlled!");
+					} else if (this.value === "O") {
+						alert("Computer Controlled!");
+					} else {
+						socket.emit('move', 1);
+						this.value = "X";
+					}
+				});
+				$2.on('click', function(e) {
+					if(this.value === "X") {
+						alert("User Controlled!");
+					} else if (this.value === "O") {
+						alert("Computer Controlled!");
+					} else {
+						socket.emit('move', 2);
+						this.value = "X";
+					}
+				});
+				$3.on('click', function(e) {
+					if(this.value === "X") {
+						alert("User Controlled!");
+					} else if (this.value === "O") {
+						alert("Computer Controlled!");
+					} else {
+						socket.emit('move', 3);
+						this.value = "X";
+					}
+				});
+				$4.on('click', function(e) {
+					if(this.value === "X") {
+						alert("User Controlled!");
+					} else if (this.value === "O") {
+						alert("Computer Controlled!");
+					} else {
+						socket.emit('move', 4);
+						this.value = "X";
+					}
+				});
+				$5.on('click', function(e) {
+					if(this.value === "X") {
+						alert("User Controlled!");
+					} else if (this.value === "O") {
+						alert("Computer Controlled!");
+					} else {
+						socket.emit('move', 5);
+						this.value = "X";
+					}
+				});
+				$6.on('click', function(e) {
+					if(this.value === "X") {
+						alert("User Controlled!");
+					} else if (this.value === "O") {
+						alert("Computer Controlled!");
+					} else {
+						socket.emit('move', 6);
+						this.value = "X";
+					}
+				});
+				$7.on('click', function(e) {
+					if(this.value === "X") {
+						alert("User Controlled!");
+					} else if (this.value === "O") {
+						alert("Computer Controlled!");
+					} else {
+						socket.emit('move', 7);
+						this.value = "X";
+					}
+				});
+				$8.on('click', function(e) {
+					if(this.value === "X") {
+						alert("User Controlled!");
+					} else if (this.value === "O") {
+						alert("Computer Controlled!");
+					} else {
+						socket.emit('move', 8);
+						this.value = "X";
+					}
+				});
+
+				$random.on('click', function(e) {
+						socket.emit('random');
+						$gamemode.hide();
+						$gameboard.show();
+				});
+
+				$hard.on('click', function(e) {
+						socket.emit('hard');
+						$gamemode.hide();
+						$gameboard.show();
+				});
+
+				socket.on('computer turn',
+					function(data) {
+						alert("Computer took index: " + data);
+						if(data === 0) {
+							 $0.val("O");
+						} else if(data === 1) {
+	 						 $1.val("O");
+						}	else if(data === 2) {
+	 						 $2.val("O");
+						}	else if(data === 3) {
+	 						 $3.val("O");
+						}	else if(data === 4) {
+	 						 $4.val("O");
+						}	else if(data === 5) {
+	 						 $5.val("O");
+						}	else if(data === 6) {
+	 						 $6.val("O");
+						}	else if(data === 7) {
+	 						 $7.val("O");
+						}	else if(data === 8) {
+	 						 $8.val("O");
+						}
+					}
+				);
+
+				socket.on('winner',
+					function(data) {
+						var html = '';
+						if(data == "user") {
+							alert("You won!");
+							html = '<h3 class="text-center"><strong>You won!</strong></h3>';
+							$winner.html(html);
+							disableButtons();
+						} else if (data == "comp") {
+							alert("You lost!");
+							html = '<h3 class="text-center"><strong>You Lost!</strong></h3>';
+							$winner.html(html);
+							disableButtons();
+						} else {
+							alert("Cat's Game!");
+							html = '<h3 class="text-center"><strong>Cats Game!</strong></h3>';
+							$winner.html(html);
+							disableButtons();
+						}
+					}
+
+				);
+
+				function resetButtons() {
+					$0.val("");
+					$1.val("");
+					$2.val("");
+					$3.val("");
+					$4.val("");
+					$5.val("");
+					$6.val("");
+					$7.val("");
+					$8.val("");
+					$0.prop('disabled', false);
+					$1.prop('disabled', false);
+					$2.prop('disabled', false);
+					$3.prop('disabled', false);
+					$4.prop('disabled', false);
+					$5.prop('disabled', false);
+					$6.prop('disabled', false);
+					$7.prop('disabled', false);
+					$8.prop('disabled', false);
+					$winner.html("<h2></h2>");
+				}
+
+				function disableButtons() {
+					$0.prop('disabled', true);
+					$1.prop('disabled', true);
+					$2.prop('disabled', true);
+					$3.prop('disabled', true);
+					$4.prop('disabled', true);
+					$5.prop('disabled', true);
+					$6.prop('disabled', true);
+					$7.prop('disabled', true);
+					$8.prop('disabled', true);
+				}
+
+
+
+
+			});
+		</script>
+
+
+
+</body>
+</html>
